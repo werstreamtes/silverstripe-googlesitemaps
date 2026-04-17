@@ -8,6 +8,7 @@ use SilverStripe\Control\Director;
 use SilverStripe\Control\HTTPResponse;
 use Wilr\GoogleSitemaps\GoogleSitemap;
 use SilverStripe\Model\ArrayData;
+use Wilr\GoogleSitemaps\Services\SitemapRenderer;
 
 /**
  * Controller for displaying the sitemap.xml. The module displays an index
@@ -43,21 +44,16 @@ class GoogleSitemapController extends Controller
      */
     public function index($url)
     {
-        if (GoogleSitemap::enabled()) {
-            $this->getResponse()->addHeader('Content-Type', 'application/xml; charset="utf-8"');
-            $this->getResponse()->addHeader('X-Robots-Tag', 'noindex');
-
-            $sitemaps = GoogleSitemap::inst()->getSitemaps();
-            $this->extend('updateGoogleSitemaps', $sitemaps);
-
-            return $this->customise(new ArrayData([
-                'Sitemaps' => $sitemaps,
-            ]))->renderWith(__CLASS__);
-        } else {
+        if (!GoogleSitemap::enabled()) {
             return new HTTPResponse('Page not found', 404);
         }
-    }
 
+        $renderer = SitemapRenderer::create();
+
+        return $renderer->asXmlResponse(
+            $renderer->renderIndex(false)
+        );
+    }
     /**
      * Specific controller action for displaying a particular list of links
      * for a class
@@ -69,29 +65,24 @@ class GoogleSitemapController extends Controller
         $class = $this->unsanitiseClassName($this->request->param('ID'));
         $page = intval($this->request->param('OtherID'));
 
-        if ($page) {
-            if (!is_numeric($page)) {
-                return new HTTPResponse('Page not found', 404);
-            }
+        if ($page && !is_numeric($page)) {
+            return new HTTPResponse('Page not found', 404);
         }
 
-        if (GoogleSitemap::enabled()
-            && $class
-            && ($page > 0)
-            && ($class == SiteTree::class || $class == 'GoogleSitemapRoute' || GoogleSitemap::is_registered($class))
+        if (
+            !GoogleSitemap::enabled()
+            || !$class
+            || $page <= 0
+            || !($class == SiteTree::class || $class == 'GoogleSitemapRoute' || GoogleSitemap::is_registered($class))
         ) {
-            $this->getResponse()->addHeader('Content-Type', 'application/xml; charset="utf-8"');
-            $this->getResponse()->addHeader('X-Robots-Tag', 'noindex');
-
-            $items = GoogleSitemap::inst()->getItems($class, $page);
-            $this->extend('updateGoogleSitemapItems', $items, $class, $page);
-
-            return array(
-                'Items' => $items
-            );
+            return new HTTPResponse('Page not found', 404);
         }
 
-        return new HTTPResponse('Page not found', 404);
+        $renderer = SitemapRenderer::create();
+
+        return $renderer->asXmlResponse(
+            $renderer->renderSection($class, $page, false)
+        );
     }
 
     /**
