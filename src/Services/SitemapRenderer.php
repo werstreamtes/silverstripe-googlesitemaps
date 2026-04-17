@@ -3,6 +3,8 @@
 namespace Wilr\GoogleSitemaps\Services;
 
 use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Model\ArrayData;
@@ -29,7 +31,7 @@ class SitemapRenderer
 
         return ArrayData::create([
             'Sitemaps' => $items,
-            'StyleSheetLink' => $urlGenerator->getIndexUrl(false) . '/styleSheetIndex',
+            'StyleSheetLink' => Controller::join_links(Director::baseURL(), 'sitemap.xml', 'styleSheetIndex'),
         ])->renderWith('Wilr\\GoogleSitemaps\\Control\\GoogleSitemapController')->forTemplate();
     }
 
