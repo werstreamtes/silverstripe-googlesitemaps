@@ -1,0 +1,13 @@
+---
+Name: googlesitemaps-static
+---
+Wilr\GoogleSitemaps\Services\StaticSitemapGenerator:
+  enabled: false
+  output_dir: 'sitemaps'
+  index_filename: 'sitemap.xml'
+  clear_output_dir: true
+
+Wilr\GoogleSitemaps\Services\SitemapUrlGenerator:
+  static_mode: false
+  static_index_path: 'sitemap.xml'
+  static_section_base: 'sitemaps'
